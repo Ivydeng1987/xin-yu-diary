@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心屿 · 云端情绪日记</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #e9dfd3 0%, #dacbb8 100%);
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+        .lock-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(65, 55, 45, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lock-card {
+            background: #fefaf5;
+            border-radius: 2rem;
+            padding: 2rem;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+        }
+        .lock-card h2 { color: #6b4e3a; font-weight: 400; margin-bottom: 0.5rem; }
+        .lock-input { width: 100%; padding: 0.9rem; border-radius: 60px; border: 1px solid #dcc9b4; margin: 1rem 0; text-align: center; font-size: 1rem; }
+        .lock-btn { background: #9b7b5c; color: white; border: none; padding: 0.8rem; border-radius: 60px; width: 100%; cursor: pointer; font-size: 1rem; }
+        .main-app { display: none; max-width: 1400px; margin: 0 auto; }
+        .journal-container { background: #fefaf5; border-radius: 2rem; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+        .journal-header { background: #e9dfd3; padding: 2rem; text-align: center; border-bottom: 1px solid #dacbb8; }
+        .journal-header h1 { font-size: 1.8rem; font-weight: 400; color: #5a3e2c; }
+        .journal-header h1:before { content: "🌿"; margin-right: 12px; }
+        .journal-header p { color: #8b735a; margin-top: 0.5rem; }
+        .two-columns { display: flex; flex-wrap: wrap; gap: 2rem; padding: 2rem; }
+        .diary-form { flex: 2; min-width: 280px; }
+        .right-sidebar { flex: 1.2; min-width: 260px; display: flex; flex-direction: column; gap: 1.5rem; }
+        .card { background: white; border-radius: 1.5rem; padding: 1.3rem; margin-bottom: 1.3rem; border: 1px solid #ede3d6; }
+        .card-title { font-weight: 500; margin-bottom: 1rem; color: #6b4e3a; border-left: 3px solid #cbb088; padding-left: 12px; }
+        input, textarea { width: 100%; padding: 0.7rem 1rem; border: 1px solid #e2d5c6; border-radius: 1rem; font-family: inherit; background: #fffcf8; }
+        .tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: #f5efe8; padding: 6px 16px; border-radius: 40px; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
+        .tag.selected { background: #cbb088; color: white; }
+        .custom-input { margin-top: 8px; width: 100%; padding: 8px 12px; border-radius: 40px; border: 1px solid #e2d5c6; }
+        .btn { border: none; padding: 12px 20px; border-radius: 40px; font-weight: 500; cursor: pointer; flex: 1; text-align: center; transition: 0.2s; }
+        .btn-primary { background: #9b7b5c; color: white; }
+        .btn-primary:hover { background: #84694c; transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 1px solid #dacbb8; color: #6b4e3a; }
+        .action-buttons { display: flex; gap: 12px; margin: 1rem 0; }
+        .history-list { max-height: 350px; overflow-y: auto; }
+        .history-item { background: #fefaf5; border-radius: 1rem; padding: 0.8rem; margin-bottom: 0.7rem; cursor: pointer; border-left: 3px solid #cbb088; display: flex; justify-content: space-between; align-items: center; }
+        .history-item:hover { background: #faf3ea; }
+        .history-date { font-size: 0.7rem; color: #b2906e; }
+        .history-title { font-weight: 500; font-size: 0.85rem; color: #4a3a2a; }
+        .delete-btn { background: none; border: none; color: #c2a07e; cursor: pointer; padding: 4px 8px; border-radius: 20px; }
+        .delete-btn:hover { color: #b55a3a; background: #f0e2d4; }
+        .therapy-card { background: #faf5ed; border-radius: 1.5rem; padding: 1.3rem; margin-top: 1rem; border-left: 4px solid #cbb088; }
+        .therapy-content { background: white; padding: 1rem; border-radius: 1rem; font-size: 0.9rem; line-height: 1.6; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+        .followup-area { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5d8ca; }
+        .followup-buttons { display: flex; gap: 10px; margin: 10px 0; }
+        .followup-btn { background: #e9dfd3; padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; border: none; cursor: pointer; }
+        .sync-status { font-size: 0.75rem; background: #e9dfd3; padding: 8px; border-radius: 30px; text-align: center; margin-bottom: 1rem; }
+        .cloud-badge { background: #cbb088; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-left: 8px; }
+        footer { text-align: center; padding: 1.2rem; font-size: 0.7rem; color: #b29272; border-top: 1px solid #ede3d6; }
+        @media (max-width: 800px) { .two-columns { flex-direction: column; } }
+    </style>
+</head>
+<body>
+
+<div id="lockScreen" class="lock-screen">
+    <div class="lock-card">
+        <h2>🔒 心屿 · 情绪日记</h2>
+        <p>请输入密码</p>
+        <input type="password" id="passwordInput" class="lock-input" placeholder="密码" autofocus>
+        <button id="unlockBtn" class="lock-btn">进入</button>
+        <div id="lockError" style="color:#b55a3a; margin-top:0.8rem;"></div>
+        <div style="margin-top:1rem; font-size:0.7rem;">默认密码: <strong>ivy1987</strong></div>
+    </div>
+</div>
+
+<div id="mainApp" class="main-app">
+    <div class="journal-container">
+        <div class="journal-header">
+            <h1>心屿 · 情绪日记 <span class="cloud-badge">☁️ 云端同步</span></h1>
+            <p>任何电脑打开网址，日记自动同步 | 数据永久保存</p>
+        </div>
+
+        <div class="two-columns">
+            <div class="diary-form">
+                <div class="card"><div class="card-title">📝 日记标题</div><input type="text" id="diaryTitle" placeholder="给今天的情绪起个名字..."></div>
+                <div class="card"><div class="card-title">📅 日期</div><input type="date" id="diaryDate"></div>
+                <div class="card"><div class="card-title">🌿 发生了什么</div><textarea id="eventInput" rows="2" placeholder="今天发生了什么？"></textarea></div>
+                <div class="card"><div class="card-title">💓 身体感受</div><div class="tag-group" id="bodyTagsContainer"></div><input type="text" id="customBody" class="custom-input" placeholder="+ 手动输入"></div>
+                <div class="card"><div class="card-title">💭 情绪</div><div class="tag-group" id="emotionTagsContainer"></div><input type="text" id="customEmotion" class="custom-input" placeholder="+ 手动输入"></div>
+                <div class="card"><div class="card-title">🌊 我对这份情绪的感受</div><textarea id="feelingAboutFeeling" rows="2"></textarea></div>
+                <div class="card"><div class="card-title">💭 脑海中的念头</div><textarea id="thoughtInput" rows="2"></textarea></div>
+                <div class="card"><div class="card-title">🎯 期待</div><textarea id="expectSelf" rows="1" placeholder="我期待自己..."></textarea><textarea id="expectOther" rows="1" placeholder="我期待他人..." style="margin-top:8px;"></textarea></div>
+                <div class="card"><div class="card-title">🌟 内心深处的渴望</div><div class="tag-group" id="desireTagsContainer"></div><input type="text" id="customDesire" class="custom-input" placeholder="+ 手动输入"></div>
+                <div class="card"><div class="card-title">🪞 自我价值感</div><textarea id="selfWorthInput" rows="2"></textarea></div>
+                <div class="action-buttons"><button class="btn btn-primary" id="saveDiaryBtn">💾 保存 & AI陪伴</button><button class="btn btn-outline" id="resetFormBtn">🔄 重置</button></div>
+                <div class="therapy-card"><div class="card-title">🌙 来自AI的陪伴</div><div class="therapy-content" id="therapyOutput"><div>✨ 写下你的故事，保存后会收到温暖的回应。</div></div>
+                <div class="followup-area" id="followupArea" style="display:none;"><div>💬 还有想说的吗？</div><div class="followup-buttons"><button id="askSatirBtn" class="followup-btn">🧘 萨提亚陪伴</button><button id="askMiracleBtn" class="followup-btn">✨ 正向赋能</button></div><div style="display:flex; gap:8px;"><input type="text" id="followupQuestion" placeholder="写下你的困惑..." style="flex:1; padding:8px; border-radius:30px; border:1px solid #dcc9b4;"><button id="submitFollowup" class="followup-btn" style="background:#cbb088; color:white;">提问</button></div><div id="followupResponse" style="background:#fef7ef; border-radius:1rem; padding:12px; margin-top:12px; display:none;"></div></div></div>
+            </div>
+
+            <div class="right-sidebar">
+                <div class="card">
+                    <div class="card-title">☁️ 云端状态</div>
+                    <div id="syncStatus" class="sync-status">🔄 连接中...</div>
+                    <div style="font-size:0.7rem; color:#b29172; text-align:center; margin-top:8px;">
+                        ✅ 日记自动保存到云端<br>
+                        ✅ 任何电脑打开自动同步
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📖 往期日记</div>
+                    <div id="historyList" class="history-list"><div style="text-align:center; padding:1rem;">✨ 暂无日记</div></div>
+                    <div style="margin-top:12px;">
+                        <button id="clearAllHistoryBtn" class="btn btn-outline" style="width:100%;">🗑️ 清空全部</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer>🌿 心屿 · 情绪日记 | 云端同步版 | 数据永久保存 | AI陪伴功能正常</footer>
+    </div>
+</div>
+
+<script>
+    // ==================== 预设选项 ====================
+    const bodyPresets = ["胸口发闷","喉咙发紧","肩膀僵硬","手心出汗","胃部收紧","心跳加快","浑身发冷","脸颊发热","眉心紧锁"];
+    const emotionPresets = ["愤怒","委屈","羞愧","焦虑","孤独","悲伤","失望","恐惧","无力","平静","喜悦"];
+    const desirePresets = ["被爱","被接纳","被看见","被尊重","有价值","安全感","自由","归属感","被理解","被认可"];
+
+    let selectedBody = new Set();
+    let selectedEmotion = new Set();
+    let selectedDesire = new Set();
+    let diaryStore = [];
+    let lastDiary = null;
+
+    async function loadFromCloud() {
+        try {
+            const response = await fetch('/api/diaries');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.diaries) {
+                    diaryStore = data.diaries;
+                    saveToLocal();
+                    renderHistory();
+                    updateSyncStatus("✅ 已同步云端", true);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log("使用本地存储");
+        }
+        loadLocal();
+        updateSyncStatus("📀 本地模式", false);
+    }
+    
+    async function saveToCloud() {
+        try {
+            const response = await fetch('/api/diaries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ diaries: diaryStore })
+            });
+            if (response.ok) {
+                updateSyncStatus("✅ 已同步云端", true);
+            } else {
+                updateSyncStatus("⚠️ 同步失败，已保存本地", false);
+            }
+        } catch (e) {
+            updateSyncStatus("📀 离线模式", false);
+        }
+    }
+
+    // ==================== AI API ====================
+    const SATIR_APPID = "2035978992784734976";
+    const SATIR_APPKEY = "E2bO4JLcF4UTR7G62VrUb3D2mptEr1Ae";
+    const MIRACLE_APPID = "2035985495667211008";
+    const MIRACLE_APPKEY = "nAjd9GPZiMM8mJSeOY1ebXTb02wHwnZH";
+    const API_URL = "https://yuanqi.tencent.com/openapi/v1/agent/chat/completions";
+
+    async function callAI(appid, appkey, userMessage, context) {
+        const messages = [{
+            role: "user",
+            content: [{
+                type: "text",
+                text: `用户的情绪日记：\n标题：${context.title}\n事件：${context.event}\n身体：${context.body}\n情绪：${context.emotion}\n对情绪的感受：${context.feelingAboutFeeling}\n观点：${context.thought}\n期待：${context.expectSelf}\n渴望：${context.desire}\n自我价值：${context.selfWorth}\n\n${userMessage}`
+            }]
+        }];
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${appkey}` },
+                body: JSON.stringify({ assistant_id: appid, user_id: "user_" + Date.now(), stream: false, messages })
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            return data.choices?.[0]?.message?.content || "我在这里陪着你。";
+        } catch(e) {
+            return "✨ 收到你的日记了。你愿意记录这些情绪，本身就是一种勇敢。";
+        }
+    }
+
+    // ==================== 日记功能 ====================
+    function initTagGroup(containerId, presets, selectedSet) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        presets.forEach(p => {
+            const tag = document.createElement("span");
+            tag.className = "tag";
+            tag.textContent = p;
+            tag.onclick = () => {
+                if (selectedSet.has(p)) { selectedSet.delete(p); tag.classList.remove("selected"); }
+                else { selectedSet.add(p); tag.classList.add("selected"); }
+            };
+            container.appendChild(tag);
+        });
+    }
+
+    function getSelectedText(set, customId) {
+        const custom = document.getElementById(customId).value.trim();
+        const items = Array.from(set);
+        if (custom) items.push(custom);
+        return items.length ? items.join("、") : "未记录";
+    }
+
+    function getCurrentDiary() {
+        return {
+            id: Date.now() + "_" + Math.random().toString(36).substr(2, 6),
+            date: document.getElementById("diaryDate").value || new Date().toISOString().slice(0,10),
+            title: document.getElementById("diaryTitle").value.trim() || "无题",
+            event: document.getElementById("eventInput").value.trim() || "未记录",
+            body: getSelectedText(selectedBody, "customBody"),
+            emotion: getSelectedText(selectedEmotion, "customEmotion"),
+            feelingAboutFeeling: document.getElementById("feelingAboutFeeling").value.trim(),
+            thought: document.getElementById("thoughtInput").value.trim() || "未记录",
+            expectSelf: document.getElementById("expectSelf").value.trim(),
+            expectOther: document.getElementById("expectOther").value.trim(),
+            desire: getSelectedText(selectedDesire, "customDesire"),
+            selfWorth: document.getElementById("selfWorthInput").value.trim() || "正在探索中",
+            timestamp: Date.now()
+        };
+    }
+
+    function resetForm() {
+        document.getElementById("diaryTitle").value = "";
+        document.getElementById("eventInput").value = "";
+        document.getElementById("feelingAboutFeeling").value = "";
+        document.getElementById("thoughtInput").value = "";
+        document.getElementById("expectSelf").value = "";
+        document.getElementById("expectOther").value = "";
+        document.getElementById("selfWorthInput").value = "";
+        document.getElementById("customBody").value = "";
+        document.getElementById("customEmotion").value = "";
+        document.getElementById("customDesire").value = "";
+        selectedBody.clear(); selectedEmotion.clear(); selectedDesire.clear();
+        document.querySelectorAll(".tag").forEach(t => t.classList.remove("selected"));
+        document.getElementById("diaryDate").value = new Date().toISOString().slice(0,10);
+    }
+
+    function saveToLocal() { localStorage.setItem("PeaceDiary", JSON.stringify(diaryStore)); }
+    function loadLocal() { const s = localStorage.getItem("PeaceDiary"); if(s) diaryStore = JSON.parse(s); else diaryStore = []; renderHistory(); }
+
+    function renderHistory() {
+        const container = document.getElementById("historyList");
+        if (!diaryStore.length) { container.innerHTML = '<div style="text-align:center; padding:1rem;">✨ 暂无日记</div>'; return; }
+        container.innerHTML = "";
+        [...diaryStore].reverse().forEach(d => {
+            const div = document.createElement("div");
+            div.className = "history-item";
+            div.innerHTML = `<div class="history-content"><div class="history-date">${d.date}</div><div class="history-title">${d.title.substring(0,35)}</div></div><button class="delete-btn" data-id="${d.id}">🗑️</button>`;
+            div.querySelector(".history-content").onclick = () => {
+                loadDiaryToForm(d);
+                const ctx = { title: d.title, event: d.event, body: d.body, emotion: d.emotion, feelingAboutFeeling: d.feelingAboutFeeling, thought: d.thought, expectSelf: d.expectSelf, expectOther: d.expectOther, desire: d.desire, selfWorth: d.selfWorth };
+                callAI(SATIR_APPID, SATIR_APPKEY, "请给我温暖的陪伴和回应。", ctx).then(res => {
+                    document.getElementById("therapyOutput").innerHTML = `<div style="white-space:pre-wrap;">${res.replace(/\n/g,'<br>')}</div>`;
+                    document.getElementById("followupArea").style.display = "block";
+                });
+                lastDiary = d;
+            };
+            div.querySelector(".delete-btn").onclick = (e) => {
+                e.stopPropagation();
+                if(confirm("删除这篇日记？")) { diaryStore = diaryStore.filter(dd => dd.id !== d.id); saveToLocal(); renderHistory(); saveToCloud(); }
+            };
+            container.appendChild(div);
+        });
+    }
+
+    function loadDiaryToForm(d) {
+        document.getElementById("diaryDate").value = d.date;
+        document.getElementById("diaryTitle").value = d.title;
+        document.getElementById("eventInput").value = d.event;
+        document.getElementById("feelingAboutFeeling").value = d.feelingAboutFeeling || "";
+        document.getElementById("thoughtInput").value = d.thought;
+        document.getElementById("expectSelf").value = d.expectSelf || "";
+        document.getElementById("expectOther").value = d.expectOther || "";
+        document.getElementById("selfWorthInput").value = d.selfWorth;
+    }
+
+    async function saveDiary() {
+        const diary = getCurrentDiary();
+        diaryStore = [diary, ...diaryStore.filter(d => d.id !== diary.id)];
+        saveToLocal();
+        renderHistory();
+        await saveToCloud();
+        document.getElementById("therapyOutput").innerHTML = "<div>🤍 正在聆听...</div>";
+        const ctx = { title: diary.title, event: diary.event, body: diary.body, emotion: diary.emotion, feelingAboutFeeling: diary.feelingAboutFeeling, thought: diary.thought, expectSelf: diary.expectSelf, expectOther: diary.expectOther, desire: diary.desire, selfWorth: diary.selfWorth };
+        const res = await callAI(SATIR_APPID, SATIR_APPKEY, "请给我温暖的陪伴和回应。", ctx);
+        document.getElementById("therapyOutput").innerHTML = `<div style="white-space:pre-wrap;">${res.replace(/\n/g,'<br>')}</div>`;
+        document.getElementById("followupArea").style.display = "block";
+        lastDiary = diary;
+        resetForm();
+    }
+
+    async function askSatir() {
+        const q = document.getElementById("followupQuestion").value.trim();
+        if(!q || !lastDiary) return;
+        const respDiv = document.getElementById("followupResponse");
+        respDiv.style.display = "block";
+        respDiv.innerHTML = "🤍 思考中...";
+        const ctx = { title: lastDiary.title, event: lastDiary.event, body: lastDiary.body, emotion: lastDiary.emotion, feelingAboutFeeling: lastDiary.feelingAboutFeeling, thought: lastDiary.thought, expectSelf: lastDiary.expectSelf, expectOther: lastDiary.expectOther, desire: lastDiary.desire, selfWorth: lastDiary.selfWorth };
+        const res = await callAI(SATIR_APPID, SATIR_APPKEY, q, ctx);
+        respDiv.innerHTML = `<div style="white-space:pre-wrap;">🧘 **萨提亚陪伴**\n\n${res.replace(/\n/g,'<br>')}</div>`;
+    }
+
+    async function askMiracle() {
+        const q = document.getElementById("followupQuestion").value.trim();
+        if(!q || !lastDiary) return;
+        const respDiv = document.getElementById("followupResponse");
+        respDiv.style.display = "block";
+        respDiv.innerHTML = "✨ 思考中...";
+        const ctx = { title: lastDiary.title, event: lastDiary.event, body: lastDiary.body, emotion: lastDiary.emotion, feelingAboutFeeling: lastDiary.feelingAboutFeeling, thought: lastDiary.thought, expectSelf: lastDiary.expectSelf, expectOther: lastDiary.expectOther, desire: lastDiary.desire, selfWorth: lastDiary.selfWorth };
+        const res = await callAI(MIRACLE_APPID, MIRACLE_APPKEY, q, ctx);
+        respDiv.innerHTML = `<div style="white-space:pre-wrap;">✨ **正向赋能**\n\n${res.replace(/\n/g,'<br>')}</div>`;
+    }
+
+    function clearAll() { if(confirm("清空所有日记？")) { diaryStore = []; saveToLocal(); renderHistory(); saveToCloud(); } }
+    function updateSyncStatus(msg, isOk) { 
+        const el = document.getElementById("syncStatus"); 
+        el.innerHTML = msg; 
+        el.style.background = isOk ? "#d9e6cf" : "#f0e2d4"; 
+    }
+
+    const DEFAULT_PWD = "ivy1987";
+    let currentPwd = localStorage.getItem("diary_password") || DEFAULT_PWD;
+    function unlock(pwd) {
+        if(pwd === currentPwd) {
+            document.getElementById("lockScreen").style.display = "none";
+            document.getElementById("mainApp").style.display = "block";
+            loadFromCloud();
+            resetForm();
+        } else { document.getElementById("lockError").innerText = "密码错误"; }
+    }
+
+    document.getElementById("unlockBtn").onclick = () => unlock(document.getElementById("passwordInput").value);
+    document.getElementById("passwordInput").addEventListener("keypress", e => { if(e.key === "Enter") unlock(e.target.value); });
+    document.getElementById("saveDiaryBtn").onclick = saveDiary;
+    document.getElementById("resetFormBtn").onclick = resetForm;
+    document.getElementById("clearAllHistoryBtn").onclick = clearAll;
+    document.getElementById("askSatirBtn").onclick = askSatir;
+    document.getElementById("askMiracleBtn").onclick = askMiracle;
+    document.getElementById("submitFollowup").onclick = askSatir;
+
+    initTagGroup("bodyTagsContainer", bodyPresets, selectedBody);
+    initTagGroup("emotionTagsContainer", emotionPresets, selectedEmotion);
+    initTagGroup("desireTagsContainer", desirePresets, selectedDesire);
+    resetForm();
+</script>
+</body>
+</html>
