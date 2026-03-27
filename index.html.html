@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外贸CRM · 密码保护版</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f0f6fc;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+            color: #1c2d3f;
+        }
+        .lock-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(14, 75, 110, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lock-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .lock-card h2 { color: #0e4b6e; margin-bottom: 0.5rem; }
+        .lock-input {
+            width: 100%;
+            padding: 0.9rem;
+            border-radius: 60px;
+            border: 1px solid #c4d6e8;
+            margin: 1rem 0;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .lock-btn {
+            background: #0e4b6e;
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 60px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .lock-error { color: #ba4b4b; margin-top: 0.8rem; }
+        .main-app { display: none; max-width: 1400px; margin: 0 auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .logo-area { display: flex; align-items: center; gap: 1rem; }
+        .logo-icon {
+            background: #0e4b6e;
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .title h1 { font-size: 1.5rem; font-weight: 600; }
+        .title span { font-size: 0.8rem; color: #54738f; }
+        .stats {
+            background: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 60px;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .stat-item { display: flex; align-items: center; gap: 0.5rem; }
+        .stat-value { font-weight: 700; font-size: 1.2rem; color: #0e4b6e; }
+        .main-card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .search-box {
+            background: #f3f9ff;
+            border-radius: 48px;
+            display: flex;
+            align-items: center;
+            padding-left: 1rem;
+            border: 1px solid #cde0ed;
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            padding: 0.6rem;
+            width: 200px;
+            outline: none;
+        }
+        .search-box button {
+            background: #0e4b6e;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .btn-secondary {
+            background: white;
+            border: 1px solid #b9d2e7;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: #0e4b6e;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-export {
+            background: #2d6e4b;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .btn-import {
+            background: #8a6d3b;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .btn-change-pwd {
+            background: #54738f;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e3eff8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+            font-size: 0.85rem;
+        }
+        th {
+            background: #f0f7fd;
+            padding: 0.8rem;
+            text-align: left;
+            color: #1f4d6e;
+        }
+        td {
+            padding: 0.8rem;
+            border-bottom: 1px solid #e7f0f7;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+        }
+        .intent-high { background: #ffebe7; color: #ac3f3f; }
+        .intent-mid { background: #e2f0e8; color: #1b7355; }
+        .level-gold { background: #f8e3b3; color: #8b6b2b; }
+        .action-icons i {
+            margin: 0 4px;
+            cursor: pointer;
+            color: #57809f;
+        }
+        .action-icons i:hover { color: #0e4b6e; }
+        .form-panel {
+            background: #f9fdff;
+            border-radius: 24px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 1px solid #d3e6f5;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .form-group label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #3f688b;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #c4d6e8;
+            border-radius: 12px;
+        }
+        .btn-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        .save-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #0e4b6e;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .save-toast.show { transform: translateY(0); opacity: 1; }
+        #importFile { display: none; }
+        .footer-note {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            color: #5d7f9a;
+        }
+    </style>
+</head>
+<body>
+    <div id="lockScreen" class="lock-screen">
+        <div class="lock-card">
+            <h2><i class="fas fa-lock"></i> 外贸CRM</h2>
+            <p>请输入密码</p>
+            <input type="password" id="passwordInput" class="lock-input" placeholder="密码" autofocus>
+            <button id="unlockBtn" class="lock-btn">进入</button>
+            <div id="lockError" class="lock-error"></div>
+        </div>
+    </div>
+
+    <div id="mainApp" class="main-app">
+        <div class="container">
+            <div class="header">
+                <div class="logo-area">
+                    <div class="logo-icon"><i class="fas fa-upload"></i></div>
+                    <div class="title">
+                        <h1>刀具·泵阀 CRM</h1>
+                        <span>密码保护版 | 一键导入/导出</span>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat-item"><span class="stat-value" id="totalClients">0</span> 总客户</div>
+                    <div class="stat-item"><span class="stat-value" id="hotLeads">0</span> 高意向</div>
+                </div>
+            </div>
+
+            <div class="main-card">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="搜索...">
+                        <button id="searchBtn">筛选</button>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn-export" id="exportAllBtn"><i class="fas fa-file-excel"></i> 导出全部</button>
+                        <button class="btn-import" id="importBtn"><i class="fas fa-file-import"></i> 导入Excel</button>
+                        <button class="btn-change-pwd" id="changePwdBtn"><i class="fas fa-key"></i> 修改密码</button>
+                        <button class="btn-primary" id="showAddFormBtn"><i class="fas fa-plus"></i> 新增客户</button>
+                    </div>
+                </div>
+                <input type="file" id="importFile" accept=".xlsx,.xls">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>姓名</th><th>公司</th><th>行业</th><th>等级</th><th>意向</th><th>最近跟进</th><th>下次跟进</th><th>操作</th></tr></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="form-panel" id="formPanel" style="display: none;">
+                <h3 id="formTitleText">新增客户</h3>
+                <div class="grid-3">
+                    <div class="form-group"><label>姓名 *</label><input type="text" id="clientName"></div>
+                    <div class="form-group"><label>公司</label><input type="text" id="company"></div>
+                    <div class="form-group"><label>国家</label><input type="text" id="country" value="China"></div>
+                    <div class="form-group"><label>主营行业</label><input type="text" id="industry" placeholder="数控刀具·铣刀等"></div>
+                    <div class="form-group"><label>客户等级</label><select id="clientLevel"><option>钻石⭐</option><option>金牌🥇</option><option>银牌🥈</option><option>基础⚪</option></select></div>
+                    <div class="form-group"><label>意向等级</label><select id="intention"><option>高意向🔥</option><option selected>中意向⭐</option><option>低意向🍃</option></select></div>
+                    <div class="form-group"><label>邮箱</label><input type="email" id="email"></div>
+                    <div class="form-group"><label>电话</label><input type="text" id="phone"></div>
+                    <div class="form-group"><label>最近跟进</label><input type="date" id="followDate"></div>
+                    <div class="form-group"><label>下次跟进</label><input type="date" id="nextFollowDate"></div>
+                    <div class="form-group"><label>下一步动作</label><input type="text" id="nextAction"></div>
+                    <div class="form-group"><label>跟进记录</label><textarea id="followNote" rows="2"></textarea></div>
+                    <div class="form-group"><label>ID</label><input type="text" id="editId" readonly></div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-primary" id="saveClientBtn">保存</button>
+                    <button class="btn-secondary" id="cancelFormBtn">取消</button>
+                </div>
+            </div>
+            <div class="footer-note">🔒 密码保护 | 数据自动保存 | 一键导入导出</div>
+        </div>
+        <div id="saveToast" class="save-toast"><i class="fas fa-check-circle"></i> 已保存</div>
+    </div>
+
+    <script>
+        const DEFAULT_PASSWORD = "crm2025";
+        let currentPwd = localStorage.getItem("crm_password") || DEFAULT_PASSWORD;
+        function checkPwd(p) { return p === currentPwd; }
+        function unlock(p) {
+            if(checkPwd(p)) {
+                document.getElementById("lockScreen").style.display = "none";
+                document.getElementById("mainApp").style.display = "block";
+                initCRM();
+            } else { document.getElementById("lockError").innerText = "密码错误"; }
+        }
+        function changePwd() {
+            const old = prompt("当前密码:");
+            if(!checkPwd(old)) { alert("密码错误"); return; }
+            const newp = prompt("新密码(至少4位):");
+            if(!newp || newp.length<4) { alert("至少4位"); return; }
+            const confirmp = prompt("确认新密码:");
+            if(newp !== confirmp) { alert("不一致"); return; }
+            currentPwd = newp;
+            localStorage.setItem("crm_password", currentPwd);
+            alert("修改成功！");
+        }
+
+        const STORAGE_KEY = 'crm_clients';
+        let clients = [];
+        let searchKeyword = '';
+        let editId = null;
+
+        function getDefault() {
+            return [
+                { id: '1', name: 'Marco Rossi', company: 'Euro Fashion', country: 'Germany', industry: '数控刀具·铣刀', clientLevel: '金牌🥇', intention: '高意向🔥', email: 'm.rossi@efashion.de', phone: '+49 170 123456', followDate: '2025-06-10', nextFollowDate: '2025-06-20', nextAction: '确认样品', followNote: '样品已寄' },
+                { id: '2', name: '李瑶', company: 'Shenzhen Ease', country: 'China', industry: '塑料切粒刀', clientLevel: '银牌🥈', intention: '中意向⭐', email: 'liyao@ease.cn', phone: '+86 135 0000 1111', followDate: '2025-06-14', nextFollowDate: '2025-06-18', nextAction: '重新报价', followNote: '询价20尺柜' }
+            ];
+        }
+
+        function loadData() { const s = localStorage.getItem(STORAGE_KEY); clients = s ? JSON.parse(s) : getDefault(); render(); }
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(clients)); showToast(); }
+
+        function getToday() { return new Date().toISOString().slice(0,10); }
+        function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+        function render() {
+            let filtered = clients;
+            if(searchKeyword) {
+                const kw = searchKeyword.toLowerCase();
+                filtered = clients.filter(c => c.name.toLowerCase().includes(kw) || (c.company && c.company.toLowerCase().includes(kw)) || (c.industry && c.industry.toLowerCase().includes(kw)));
+            }
+            let html = '';
+            filtered.forEach(c => {
+                let intentClass = c.intention.includes('高') ? 'intent-high' : 'intent-mid';
+                let levelClass = c.clientLevel.includes('金') ? 'level-gold' : '';
+                html += `<tr>
+                    <td><strong>${c.name}</strong><br><small>${c.company || ''}</small></td>
+                    <td>${c.industry || '-'}</td>
+                    <td><span class="badge ${levelClass}">${c.clientLevel}</span></td>
+                    <td><span class="badge ${intentClass}">${c.intention}</span></td>
+                    <td>${c.followDate || '-'}</td>
+                    <td>${c.nextFollowDate || '-'}</td>
+                    <td class="action-icons">
+                        <i class="fas fa-edit" onclick="edit('${c.id}')"></i>
+                        <i class="fas fa-trash-alt" onclick="del('${c.id}')"></i>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('tableBody').innerHTML = html || '<tr><td colspan="7">暂无客户</td></tr>';
+            document.getElementById('totalClients').innerText = clients.length;
+            document.getElementById('hotLeads').innerText = clients.filter(c => c.intention.includes('高')).length;
+        }
+
+        function resetForm() {
+            document.getElementById('clientName').value = '';
+            document.getElementById('company').value = '';
+            document.getElementById('country').value = 'China';
+            document.getElementById('industry').value = '';
+            document.getElementById('clientLevel').value = '基础⚪';
+            document.getElementById('intention').value = '中意向⭐';
+            document.getElementById('email').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('followDate').value = getToday();
+            document.getElementById('nextFollowDate').value = '';
+            document.getElementById('nextAction').value = '';
+            document.getElementById('followNote').value = '';
+            editId = null;
+            document.getElementById('editId').value = '';
+            document.getElementById('formTitleText').innerText = '新增客户';
+            document.getElementById('formPanel').style.display = 'none';
+        }
+
+        function saveClient() {
+            const name = document.getElementById('clientName').value.trim();
+            if(!name) { alert('姓名不能为空'); return; }
+            const client = {
+                id: editId || genId(),
+                name: name,
+                company: document.getElementById('company').value.trim(),
+                country: document.getElementById('country').value.trim(),
+                industry: document.getElementById('industry').value.trim(),
+                clientLevel: document.getElementById('clientLevel').value,
+                intention: document.getElementById('intention').value,
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                followDate: document.getElementById('followDate').value,
+                nextFollowDate: document.getElementById('nextFollowDate').value,
+                nextAction: document.getElementById('nextAction').value.trim(),
+                followNote: document.getElementById('followNote').value.trim()
+            };
+            if(editId) {
+                const idx = clients.findIndex(c => c.id === editId);
+                if(idx !== -1) clients[idx] = client;
+            } else { clients.push(client); }
+            saveData();
+            render();
+            resetForm();
+        }
+
+        window.edit = (id) => {
+            const c = clients.find(c => c.id === id);
+            if(!c) return;
+            document.getElementById('clientName').value = c.name;
+            document.getElementById('company').value = c.company || '';
+            document.getElementById('country').value = c.country || 'China';
+            document.getElementById('industry').value = c.industry || '';
+            document.getElementById('clientLevel').value = c.clientLevel;
+            document.getElementById('intention').value = c.intention;
+            document.getElementById('email').value = c.email || '';
+            document.getElementById('phone').value = c.phone || '';
+            document.getElementById('followDate').value = c.followDate || getToday();
+            document.getElementById('nextFollowDate').value = c.nextFollowDate || '';
+            document.getElementById('nextAction').value = c.nextAction || '';
+            document.getElementById('followNote').value = c.followNote || '';
+            editId = c.id;
+            document.getElementById('editId').value = c.id;
+            document.getElementById('formTitleText').innerText = '编辑客户';
+            document.getElementById('formPanel').style.display = 'block';
+        };
+        window.del = (id) => { if(confirm('确定删除？')) { clients = clients.filter(c => c.id !== id); saveData(); render(); } };
+
+        function exportAll() {
+            if(!clients.length) { alert('无数据'); return; }
+            const headers = ['姓名','公司','国家','行业','等级','意向','邮箱','电话','最近跟进','下次跟进','下一步动作','跟进记录'];
+            const data = clients.map(c => [c.name, c.company, c.country, c.industry, c.clientLevel, c.intention, c.email, c.phone, c.followDate, c.nextFollowDate, c.nextAction, c.followNote]);
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '客户');
+            XLSX.writeFile(wb, `客户_${getToday()}.xlsx`);
+        }
+
+        function importFileHandler(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                if(rows.length < 2) { alert('无数据'); return; }
+                const imported = [];
+                for(let i=1; i<rows.length; i++) {
+                    const r = rows[i];
+                    if(r[0]) imported.push({ id: genId(), name: String(r[0]).trim(), company: r[1]?String(r[1]).trim():'', country: r[2]?String(r[2]).trim():'', industry: r[3]?String(r[3]).trim():'', clientLevel: r[4]?String(r[4]).trim():'基础⚪', intention: r[5]?String(r[5]).trim():'中意向⭐', email: r[6]?String(r[6]).trim():'', phone: r[7]?String(r[7]).trim():'', followDate: r[8]?String(r[8]).trim():'', nextFollowDate: r[9]?String(r[9]).trim():'', nextAction: r[10]?String(r[10]).trim():'', followNote: r[11]?String(r[11]).trim():'' });
+                }
+                if(confirm(`导入 ${imported.length} 条，确定替换？取消则追加`)) clients = imported;
+                else clients = [...clients, ...imported];
+                saveData(); render();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showToast() { const t = document.getElementById('saveToast'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+        function initCRM() {
+            loadData();
+            document.getElementById('searchBtn').onclick = () => { searchKeyword = document.getElementById('searchInput').value; render(); };
+            document.getElementById('showAddFormBtn').onclick = () => { resetForm(); document.getElementById('formPanel').style.display = 'block'; };
+            document.getElementById('cancelFormBtn').onclick = resetForm;
+            document.getElementById('saveClientBtn').onclick = saveClient;
+            document.getElementById('exportAllBtn').onclick = exportAll;
+            document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+            document.getElementById('importFile').onchange = (e) => { if(e.target.files[0]) importFileHandler(e.target.files[0]); e.target.value = ''; };
+            document.getElementById('changePwdBtn').onclick = changePwd;
+        }
+
+        document.getElementById('unlockBtn').onclick = () => unlock(document.getElementById('passwordInput').value);
+        document.getElementById('passwordInput').addEventListener('keypress', e => { if(e.key === 'Enter') unlock(e.target.value); });
+    </script>
+</body>
+</html>
