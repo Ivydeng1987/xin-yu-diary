@@ -3,471 +3,470 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>心屿 · 情绪日记 | 云端同步版</title>
+    <title>外贸CRM · 云端同步版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #e7e2d9;
-            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
-            padding: 2rem 1.5rem;
-        }
-        .lock-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(65, 55, 45, 0.92); backdrop-filter: blur(12px); z-index: 1000;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .lock-card {
-            background: #fefaf5; border-radius: 2rem; padding: 2rem; max-width: 380px; width: 90%; text-align: center;
-        }
-        .lock-card h2 { color: #6b4e3a; }
-        .lock-input {
-            width: 100%; padding: 0.9rem; border-radius: 60px; border: 1px solid #dcc9b4; margin: 1rem 0; text-align: center;
-        }
-        .lock-btn {
-            background: #9b7b5c; color: white; border: none; padding: 0.8rem; border-radius: 60px; width: 100%; cursor: pointer;
-        }
-        .lock-error { color: #b55a3a; margin-top: 0.8rem; }
-        .main-app { display: none; max-width: 1300px; margin: 0 auto; }
-        
-        .journal-container { background: #fefaf5; border-radius: 2rem; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
-        .journal-header { background: #e9dfd3; padding: 2rem; text-align: center; border-bottom: 1px solid #dacbb8; }
-        .journal-header h1 { font-size: 1.8rem; font-weight: 400; color: #5a3e2c; }
-        .journal-header h1:before { content: "🌿"; margin-right: 12px; }
-        .journal-header p { color: #8b735a; margin-top: 0.5rem; }
-        
-        .two-columns { display: flex; flex-wrap: wrap; gap: 2rem; padding: 2rem; }
-        .diary-form { flex: 2; min-width: 280px; }
-        .right-sidebar { flex: 1.2; min-width: 260px; display: flex; flex-direction: column; gap: 1.5rem; }
-        
-        .card { background: white; border-radius: 1.5rem; padding: 1.3rem; margin-bottom: 1.3rem; border: 1px solid #ede3d6; }
-        .card-title { font-weight: 500; margin-bottom: 1rem; color: #6b4e3a; border-left: 3px solid #cbb088; padding-left: 12px; }
-        
-        input, textarea, select {
-            width: 100%; padding: 0.7rem 1rem; border: 1px solid #e2d5c6; border-radius: 1rem; font-family: inherit; background: #fffcf8;
-        }
-        .tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-        .tag { background: #f5efe8; padding: 6px 16px; border-radius: 40px; font-size: 0.8rem; cursor: pointer; }
-        .tag.selected { background: #cbb088; color: white; }
-        .custom-input { margin-top: 8px; width: 100%; padding: 8px 12px; border-radius: 40px; border: 1px solid #e2d5c6; }
-        
-        .btn { border: none; padding: 12px 20px; border-radius: 40px; font-weight: 500; cursor: pointer; flex: 1; text-align: center; }
-        .btn-primary { background: #9b7b5c; color: white; }
-        .btn-outline { background: transparent; border: 1px solid #dacbb8; color: #6b4e3a; }
-        .action-buttons { display: flex; gap: 12px; margin: 1rem 0; }
-        
-        .history-list { max-height: 300px; overflow-y: auto; }
-        .history-item {
-            background: #fefaf5; border-radius: 1rem; padding: 0.8rem; margin-bottom: 0.7rem; cursor: pointer;
-            border-left: 3px solid #cbb088; display: flex; justify-content: space-between; align-items: center;
-        }
-        .history-item:hover { background: #faf3ea; }
-        .history-date { font-size: 0.7rem; color: #b2906e; }
-        .history-title { font-weight: 500; font-size: 0.85rem; color: #4a3a2a; }
-        .delete-btn { background: none; border: none; color: #c2a07e; cursor: pointer; padding: 4px 8px; border-radius: 20px; }
-        .delete-btn:hover { color: #b55a3a; background: #f0e2d4; }
-        
-        .therapy-card { background: #faf5ed; border-radius: 1.5rem; padding: 1.3rem; margin-top: 1rem; border-left: 4px solid #cbb088; }
-        .therapy-content { background: white; padding: 1rem; border-radius: 1rem; font-size: 0.9rem; line-height: 1.6; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
-        .followup-area { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5d8ca; }
-        .followup-buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
-        .followup-btn { background: #e9dfd3; padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; border: none; cursor: pointer; }
-        .followup-input-area { display: flex; gap: 8px; margin-top: 8px; }
-        .followup-input { flex: 1; padding: 8px 12px; border-radius: 30px; border: 1px solid #dcc9b4; }
-        .sync-status { font-size: 0.75rem; background: #e9dfd3; padding: 8px; border-radius: 30px; text-align: center; margin-bottom: 1rem; }
-        .cloud-badge { background: #cbb088; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-left: 8px; }
-        footer { text-align: center; padding: 1.2rem; font-size: 0.7rem; color: #b29272; border-top: 1px solid #ede3d6; }
-        @media (max-width: 800px) { .two-columns { flex-direction: column; } }
+        body { background: #f0f6fc; font-family: 'Inter', system-ui, sans-serif; padding: 2rem 1.8rem; color: #1c2d3f; }
+        .lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(14, 75, 110, 0.95); backdrop-filter: blur(12px); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .lock-card { background: white; border-radius: 2rem; padding: 2rem; max-width: 400px; width: 90%; text-align: center; }
+        .lock-card h2 { color: #0e4b6e; }
+        .lock-input { width: 100%; padding: 0.9rem; border-radius: 60px; border: 1px solid #c4d6e8; margin: 1rem 0; text-align: center; font-size: 1rem; }
+        .lock-btn { background: #0e4b6e; color: white; border: none; padding: 0.8rem; border-radius: 60px; width: 100%; cursor: pointer; font-weight: 600; }
+        .lock-error { color: #ba4b4b; margin-top: 0.8rem; }
+        .main-app { display: none; max-width: 1600px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.2rem; margin-bottom: 2rem; }
+        .logo-area { display: flex; align-items: center; gap: 1rem; }
+        .logo-icon { background: #0e4b6e; color: white; width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .title h1 { font-size: 2rem; font-weight: 600; }
+        .title span { background: #e1edf7; color: #0e4b6e; padding: 0.2rem 1.2rem; border-radius: 30px; font-size: 0.85rem; }
+        .stats { background: white; padding: 0.9rem 2rem; border-radius: 60px; display: flex; gap: 2rem; }
+        .stat-item { display: flex; align-items: center; gap: 0.7rem; }
+        .stat-value { font-weight: 700; font-size: 1.5rem; color: #103f5c; }
+        .stat-label { color: #54738f; }
+        .main-card { background: white; border-radius: 32px; padding: 2rem; margin-bottom: 2rem; }
+        .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; margin-bottom: 2rem; }
+        .search-box { background: #f3f9ff; border-radius: 48px; display: flex; align-items: center; padding-left: 1.5rem; border: 1px solid #cde0ed; }
+        .search-box input { border: none; background: transparent; padding: 0.75rem 1rem; width: 260px; outline: none; }
+        .search-box button { background: #0e4b6e; border: none; color: white; padding: 0.5rem 1.8rem; border-radius: 40px; cursor: pointer; }
+        .btn-secondary { background: white; border: 1px solid #b9d2e7; color: #1f4a66; padding: 0.6rem 1.5rem; border-radius: 40px; cursor: pointer; }
+        .btn-primary { background: #0e4b6e; color: white; border: none; padding: 0.8rem 2.2rem; border-radius: 40px; font-weight: 600; cursor: pointer; }
+        .btn-export { background: #2d6e4b; color: white; border: none; padding: 0.8rem 2rem; border-radius: 40px; cursor: pointer; }
+        .btn-import { background: #8a6d3b; color: white; border: none; padding: 0.8rem 2rem; border-radius: 40px; cursor: pointer; }
+        .change-pwd-btn { background: #54738f; color: white; border: none; padding: 0.5rem 1rem; border-radius: 40px; font-size: 0.8rem; cursor: pointer; margin-left: 0.5rem; }
+        .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #e3eff8; margin: 1.8rem 0 1rem; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; background: white; font-size: 0.9rem; }
+        th { background: #f0f7fd; padding: 1rem 0.8rem; font-weight: 600; color: #1f4d6e; text-align: left; }
+        td { padding: 0.8rem; border-bottom: 1px solid #e7f0f7; vertical-align: middle; }
+        .client-name { font-weight: 600; }
+        .badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 30px; font-size: 0.75rem; }
+        .intent-high { background: #ffebe7; color: #ac3f3f; }
+        .intent-mid { background: #e2f0e8; color: #1b7355; }
+        .source-badge { background: #e1d7f0; color: #4f378b; }
+        .level-gold { background: #f8e3b3; color: #8b6b2b; }
+        .action-icons i { font-size: 1.2rem; color: #57809f; margin: 0 6px; cursor: pointer; }
+        .action-icons i:hover { color: #0e4b6e; }
+        .checkbox-col { width: 40px; text-align: center; }
+        .form-panel { background: #f9fdff; border-radius: 32px; padding: 2rem; margin-top: 2rem; border: 1px solid #d3e6f5; }
+        .form-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: #13445f; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .form-group label { font-size: 0.7rem; font-weight: 600; color: #3f688b; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.6rem; border: 1px solid #c4d6e8; border-radius: 16px; font-size: 0.85rem; }
+        .btn-group { display: flex; gap: 1rem; margin-top: 1rem; }
+        .footer-note { text-align: center; margin-top: 2rem; color: #5d7f9a; }
+        .sync-status { background: #e6f3fa; padding: 8px 16px; border-radius: 40px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .save-toast { position: fixed; bottom: 30px; right: 30px; background: #0e4b6e; color: white; padding: 12px 24px; border-radius: 50px; z-index: 9999; transform: translateY(100px); opacity: 0; transition: 0.3s; }
+        .save-toast.show { transform: translateY(0); opacity: 1; }
+        #importFile { display: none; }
+        .cloud-icon { color: #2d6e4b; margin-right: 4px; }
     </style>
 </head>
 <body>
-
-<div id="lockScreen" class="lock-screen">
-    <div class="lock-card">
-        <h2>🔒 心屿 · 情绪日记</h2>
-        <p>云端版 · 任何电脑都能用</p>
-        <input type="password" id="passwordInput" class="lock-input" placeholder="密码" autofocus>
-        <button id="unlockBtn" class="lock-btn">进入</button>
-        <div id="lockError" class="lock-error"></div>
-        <div style="margin-top:1rem; font-size:0.7rem;">默认密码: <strong>ivy1987</strong></div>
-    </div>
-</div>
-
-<div id="mainApp" class="main-app">
-    <div class="journal-container">
-        <div class="journal-header">
-            <h1>心屿 · 情绪日记 <span class="cloud-badge">☁️ 云端同步</span></h1>
-            <p>任何电脑打开，日记自动同步 | 三大智能体陪伴</p>
+    <div id="lockScreen" class="lock-screen">
+        <div class="lock-card">
+            <h2><i class="fas fa-lock"></i> 外贸CRM</h2>
+            <p>请输入密码</p>
+            <input type="password" id="passwordInput" class="lock-input" placeholder="密码" autofocus>
+            <button id="unlockBtn" class="lock-btn">进入系统</button>
+            <div id="lockError" class="lock-error"></div>
         </div>
+    </div>
 
-        <div class="two-columns">
-            <div class="diary-form">
-                <div class="card"><div class="card-title">📝 日记标题</div><input type="text" id="diaryTitle" placeholder="给今天的情绪起个名字..."></div>
-                <div class="card"><div class="card-title">📅 日期</div><input type="date" id="diaryDate"></div>
-                <div class="card"><div class="card-title">🌿 发生了什么</div><textarea id="eventInput" rows="2" placeholder="今天发生了什么？"></textarea></div>
-                
-                <div class="card"><div class="card-title">💓 身体感受</div><div class="tag-group" id="bodyTagsContainer"></div><input type="text" id="customBody" class="custom-input" placeholder="+ 手动输入"></div>
-                <div class="card"><div class="card-title">💭 情绪</div><div class="tag-group" id="emotionTagsContainer"></div><input type="text" id="customEmotion" class="custom-input" placeholder="+ 手动输入"></div>
-                <div class="card"><div class="card-title">🌊 我对这份情绪的感受</div><textarea id="feelingAboutFeeling" rows="2"></textarea></div>
-                <div class="card"><div class="card-title">💭 脑海中的念头</div><textarea id="thoughtInput" rows="2"></textarea></div>
-                <div class="card"><div class="card-title">🎯 期待</div><textarea id="expectSelf" rows="1" placeholder="我期待自己..."></textarea><textarea id="expectOther" rows="1" placeholder="我期待他人..." style="margin-top:8px;"></textarea></div>
-                <div class="card"><div class="card-title">🌟 内心深处的渴望</div><div class="tag-group" id="desireTagsContainer"></div><input type="text" id="customDesire" class="custom-input" placeholder="+ 手动输入"></div>
-                <div class="card"><div class="card-title">🪞 自我价值感</div><textarea id="selfWorthInput" rows="2"></textarea></div>
-                
-                <div class="action-buttons"><button class="btn btn-primary" id="saveDiaryBtn">💾 保存 & AI陪伴</button><button class="btn btn-outline" id="resetFormBtn">🔄 重置</button></div>
-                
-                <div class="therapy-card">
-                    <div class="card-title" style="margin-bottom:12px;">🌙 来自AI的陪伴</div>
-                    <div class="therapy-content" id="therapyOutput"><div>✨ 写下你的故事，保存后会收到温暖的回应。</div></div>
-                    <div class="followup-area" id="followupArea" style="display:none;">
-                        <div style="font-size:0.8rem; margin-bottom:8px;">💬 还有想说的吗？</div>
-                        <div class="followup-buttons">
-                            <button id="askSatirBtn" class="followup-btn">🧘 萨提亚陪伴</button>
-                            <button id="askMiracleBtn" class="followup-btn">✨ 奇迹30赋能</button>
-                            <button id="askZhaoBtn" class="followup-btn" style="background:#cbb088; color:white;">👩‍🏫 赵炎育儿</button>
-                        </div>
-                        <div class="followup-input-area">
-                            <input type="text" id="followupQuestion" class="followup-input" placeholder="写下你的困惑...">
-                            <button id="submitFollowup" class="followup-btn" style="background:#cbb088; color:white;">提问</button>
-                        </div>
-                        <div id="followupResponse" style="background:#fef7ef; border-radius:1rem; padding:12px; margin-top:12px; display:none;"></div>
+    <div id="mainApp" class="main-app">
+        <div class="container">
+            <div id="saveToast" class="save-toast"><i class="fas fa-cloud-upload-alt"></i> 已同步到云端</div>
+            
+            <div class="header">
+                <div class="logo-area">
+                    <div class="logo-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div class="title">
+                        <h1>刀具·泵阀 CRM <button id="changePwdBtn" class="change-pwd-btn"><i class="fas fa-key"></i> 修改密码</button></h1>
+                        <span><i class="fas fa-database"></i> JSONBin 云端同步 | 多设备自动同步</span>
                     </div>
+                </div>
+                <div class="stats">
+                    <div class="stat-item"><span class="stat-value" id="totalClients">0</span> <span class="stat-label">总客户</span></div>
+                    <div class="stat-item"><span class="stat-value" id="hotLeads">0</span> <span class="stat-label">高意向</span></div>
+                    <div class="stat-item"><span class="stat-value" id="dueTodayCount">0</span> <span class="stat-label">今日待跟进</span></div>
                 </div>
             </div>
 
-            <div class="right-sidebar">
-                <div class="card">
-                    <div class="card-title">☁️ 云端状态</div>
-                    <div id="syncStatus" class="sync-status">🔄 同步中...</div>
-                    <div style="font-size:0.7rem; color:#b29172; text-align:center; margin-top:8px;">
-                        ✅ 日记自动保存到云端<br>
-                        ✅ 任何电脑打开自动同步
+            <div class="main-card">
+                <div class="toolbar">
+                    <div class="search-area">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="搜索姓名/公司/行业...">
+                            <button id="searchBtn">筛选</button>
+                        </div>
+                        <button class="btn-secondary" id="clearSearchBtn"><i class="fas fa-redo-alt"></i> 重置</button>
+                        <div class="export-bar">
+                            <button class="btn-export" id="exportAllBtn"><i class="fas fa-file-excel"></i> 导出Excel</button>
+                            <button class="btn-import" id="importBtn"><i class="fas fa-file-import"></i> 导入Excel</button>
+                        </div>
+                        <div id="syncStatus" class="sync-status"><i class="fas fa-cloud-upload-alt cloud-icon"></i> 同步中...</div>
                     </div>
+                    <button class="btn-primary" id="showAddFormBtn"><i class="fas fa-plus-circle"></i> 新增客户</button>
                 </div>
-                <div class="card">
-                    <div class="card-title">📖 往期日记</div>
-                    <div id="historyList" class="history-list"><div style="text-align:center; padding:1rem;">✨ 暂无日记</div></div>
-                    <div style="margin-top:12px;">
-                        <button id="clearAllHistoryBtn" class="btn btn-outline" style="width:100%;">🗑️ 清空全部</button>
-                    </div>
+
+                <input type="file" id="importFile" accept=".xlsx,.xls">
+
+                <div class="table-wrapper">
+                    <table id="clientTable">
+                        <thead> <th class="checkbox-col"><input type="checkbox" id="selectAllCheckbox"></th><th>客户/公司</th><th>行业</th><th>等级/意向</th><th>来源</th><th>最近跟进</th><th>下次跟进</th><th>操作</th> </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
                 </div>
             </div>
-        </div>
-        <footer>🌿 心屿 · 情绪日记 | 云端同步版 | 三大智能体陪伴 | 数据永久保存</footer>
-    </div>
-</div>
 
-<script>
-    // ========== JSONBin 云端配置 ==========
-    const DIARY_BIN_ID = "69cb3914856a682189e48b8a";
-    const API_KEY = "$2a$10$/AWsEWaqroGk3UVa1Yu2euvfFYil8BCHJmWWrgZMBCtV.L2J8Ikwi";
-    
-    // ========== 智能体配置 ==========
-    const SATIR_APPID = "2035978992784734976";
-    const SATIR_APPKEY = "E2bO4JLcF4UTR7G62VrUb3D2mptEr1Ae";
-    const MIRACLE_APPID = "2035985495667211008";
-    const MIRACLE_APPKEY = "nAjd9GPZiMM8mJSeOY1ebXTb02wHwnZH";
-    const ZHAO_APPID = "2035665752695062400";
-    const ZHAO_APPKEY = "E2bO4JLcF4UTR7G62VrUb3D2mptEr1Ae";  // 使用相同的 API Key
-    
-    const API_URL = "https://yuanqi.tencent.com/openapi/v1/agent/chat/completions";
-    
-    // ========== 预设选项 ==========
-    const bodyPresets = ["胸口发闷","喉咙发紧","肩膀僵硬","手心出汗","胃部收紧","心跳加快","浑身发冷","脸颊发热","眉心紧锁"];
-    const emotionPresets = ["愤怒","委屈","羞愧","焦虑","孤独","悲伤","失望","恐惧","无力","平静","喜悦"];
-    const desirePresets = ["被爱","被接纳","被看见","被尊重","有价值","安全感","自由","归属感","被理解","被认可"];
-    
-    let selectedBody = new Set();
-    let selectedEmotion = new Set();
-    let selectedDesire = new Set();
-    let diaryStore = [];
-    let lastDiary = null;
-    
-    // ========== 密码 ==========
-    const DEFAULT_PWD = "ivy1987";
-    let currentPwd = localStorage.getItem("diary_password") || DEFAULT_PWD;
-    
-    function checkPwd(p) { return p === currentPwd; }
-    function unlock() {
-        let pwd = document.getElementById("passwordInput").value;
-        if (checkPwd(pwd)) {
-            document.getElementById("lockScreen").style.display = "none";
-            document.getElementById("mainApp").style.display = "block";
-            initDiary();
-        } else {
-            document.getElementById("lockError").innerText = "❌ 密码错误";
-        }
-    }
-    
-    function changePwd() {
-        let old = prompt("当前密码:");
-        if (!checkPwd(old)) { alert("密码错误"); return; }
-        let newp = prompt("新密码(至少4位):");
-        if (!newp || newp.length < 4) { alert("至少4位"); return; }
-        let confirmp = prompt("确认新密码:");
-        if (newp !== confirmp) { alert("不一致"); return; }
-        currentPwd = newp;
-        localStorage.setItem("diary_password", currentPwd);
-        alert("✅ 密码修改成功");
-    }
-    
-    // ========== JSONBin 云端同步 ==========
-    async function loadFromCloud() {
-        try {
-            const response = await fetch(`https://api.jsonbin.io/v3/b/${DIARY_BIN_ID}/latest`, {
-                headers: { 'X-Access-Key': API_KEY }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                diaryStore = data.record.diaries || [];
-                renderHistory();
-                updateSyncStatus(true, "已同步云端");
+            <div class="form-panel" id="formPanel" style="display: none;">
+                <div class="form-title" id="formTitleText">新增外贸客户</div>
+                <div class="grid-3">
+                    <div class="form-group"><label>姓名 *</label><input type="text" id="clientName"></div>
+                    <div class="form-group"><label>公司</label><input type="text" id="company"></div>
+                    <div class="form-group"><label>国家</label><input type="text" id="country" value="China"></div>
+                    <div class="form-group"><label>主营行业</label><input type="text" id="industry"></div>
+                    <div class="form-group"><label>产品线</label><input type="text" id="productLine"></div>
+                    <div class="form-group"><label>规模</label><select id="scale"><option>1-10人</option><option>11-50人</option><option>51-200人</option><option>201-500人</option><option>500+人</option></select></div>
+                    <div class="form-group"><label>客户等级</label><select id="clientLevel"><option>钻石⭐</option><option>金牌🥇</option><option>银牌🥈</option><option>基础⚪</option></select></div>
+                    <div class="form-group"><label>意向等级</label><select id="intention"><option>高意向🔥</option><option>中意向⭐</option><option>低意向🍃</option></select></div>
+                    <div class="form-group"><label>客户来源</label><select id="source"><option>展会</option><option>网络搜索</option><option>客户推荐</option><option>社交媒体</option><option>官网</option><option>B端平台</option></select></div>
+                    <div class="form-group"><label>邮箱</label><input type="email" id="email"></div>
+                    <div class="form-group"><label>电话</label><input type="text" id="phone"></div>
+                    <div class="form-group"><label>最近跟进</label><input type="date" id="followDate"></div>
+                    <div class="form-group"><label>下次跟进</label><input type="date" id="nextFollowDate"></div>
+                    <div class="form-group"><label>下一步动作</label><input type="text" id="nextAction"></div>
+                    <div class="form-group"><label>跟进记录</label><textarea id="followNote" rows="2"></textarea></div>
+                    <input type="hidden" id="editId">
+                </div>
+                <div class="btn-group">
+                    <button class="btn-primary" id="saveClientBtn">保存</button>
+                    <button class="btn-secondary" id="cancelFormBtn">取消</button>
+                </div>
+            </div>
+
+            <div class="footer-note">🔒 JSONBin 云端同步 | 任何电脑打开自动同步 | 换电脑数据不丢失</div>
+        </div>
+    </div>
+
+    <script>
+        // ========== JSONBin 配置 ==========
+        const BIN_ID = "69ca405a36566621a85fc22b";
+        const API_KEY = "$2a$10$Rf880vEKtJ5.QrQwXfjMXuNGxXNnqWSsh5Gj.D74Pj/Ru9LPezhVi";
+        
+        // ========== 密码 ==========
+        const DEFAULT_PWD = "crm2025";
+        let currentPwd = localStorage.getItem("crm_password") || DEFAULT_PWD;
+        
+        let clients = [];
+        let searchKeyword = "";
+        let editId = null;
+        
+        function checkPwd(p) { return p === currentPwd; }
+        function unlock() {
+            let pwd = document.getElementById("passwordInput").value;
+            if (checkPwd(pwd)) {
+                document.getElementById("lockScreen").style.display = "none";
+                document.getElementById("mainApp").style.display = "block";
+                initCRM();
             } else {
-                throw new Error("加载失败");
+                document.getElementById("lockError").innerText = "❌ 密码错误";
             }
-        } catch (e) {
-            console.log("加载云端失败，使用本地备份", e);
-            loadLocal();
-            updateSyncStatus(false, "离线模式");
         }
-    }
-    
-    async function saveToCloud() {
-        try {
-            const response = await fetch(`https://api.jsonbin.io/v3/b/${DIARY_BIN_ID}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Access-Key': API_KEY
-                },
-                body: JSON.stringify({ diaries: diaryStore })
-            });
-            if (response.ok) {
-                updateSyncStatus(true, "已同步云端");
-                showToast("已同步到云端");
-            } else {
+        
+        function changePwd() {
+            let old = prompt("当前密码:");
+            if (!checkPwd(old)) { alert("密码错误"); return; }
+            let newp = prompt("新密码(至少4位):");
+            if (!newp || newp.length < 4) { alert("至少4位"); return; }
+            let confirmp = prompt("确认新密码:");
+            if (newp !== confirmp) { alert("不一致"); return; }
+            currentPwd = newp;
+            localStorage.setItem("crm_password", currentPwd);
+            alert("✅ 密码修改成功");
+        }
+        
+        async function loadFromCloud() {
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                    headers: { 'X-Access-Key': API_KEY }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    clients = data.record.clients || [];
+                    render();
+                    updateSyncStatus(true, "已同步云端");
+                } else {
+                    throw new Error("加载失败");
+                }
+            } catch (e) {
+                console.log("加载云端失败，使用本地备份", e);
+                loadLocal();
+                updateSyncStatus(false, "离线模式");
+            }
+        }
+        
+        async function saveToCloud() {
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Access-Key': API_KEY
+                    },
+                    body: JSON.stringify({ clients: clients })
+                });
+                if (response.ok) {
+                    updateSyncStatus(true, "已同步云端");
+                    showToast("已同步到云端");
+                } else {
+                    updateSyncStatus(false, "同步失败");
+                }
+            } catch (e) {
+                console.error("保存失败", e);
                 updateSyncStatus(false, "同步失败");
             }
-        } catch (e) {
-            console.error("保存失败", e);
-            updateSyncStatus(false, "同步失败");
         }
-    }
-    
-    function saveLocal() { localStorage.setItem("diary_backup", JSON.stringify(diaryStore)); }
-    function loadLocal() { 
-        const stored = localStorage.getItem("diary_backup");
-        if (stored) diaryStore = JSON.parse(stored);
-        else diaryStore = [];
-        renderHistory();
-    }
-    
-    function updateSyncStatus(isOnline, msg) {
-        const el = document.getElementById("syncStatus");
-        if (isOnline) {
-            el.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> ' + msg;
-            el.style.background = "#d9e6cf";
-        } else {
-            el.innerHTML = '<i class="fas fa-database"></i> ' + msg;
-            el.style.background = "#f0e2d4";
+        
+        function saveLocal() { localStorage.setItem("crm_backup", JSON.stringify(clients)); }
+        function loadLocal() { 
+            const stored = localStorage.getItem("crm_backup");
+            if (stored) clients = JSON.parse(stored);
+            else clients = getDefaultData();
+            render();
         }
-    }
-    
-    function showToast(msg) {
-        const toast = document.getElementById("saveToast") || (() => { const t = document.createElement('div'); t.id='saveToast'; t.className='save-toast'; document.body.appendChild(t); return t; })();
-        toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + msg;
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 2000);
-    }
-    
-    // ========== AI 调用 ==========
-    async function callAI(appid, appkey, userMessage, context) {
-        const messages = [{
-            role: "user",
-            content: [{
-                type: "text",
-                text: `用户的情绪日记：\n标题：${context.title}\n事件：${context.event}\n身体：${context.body}\n情绪：${context.emotion}\n对情绪的感受：${context.feelingAboutFeeling}\n观点：${context.thought}\n期待：${context.expectSelf}\n渴望：${context.desire}\n自我价值：${context.selfWorth}\n\n用户的问题：${userMessage}`
-            }]
-        }];
-        try {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${appkey}` },
-                body: JSON.stringify({ assistant_id: appid, user_id: "user_" + Date.now(), stream: false, messages })
+        
+        function getDefaultData() {
+            return [
+                { id: "1", name: "Marco Rossi", company: "Euro Fashion", country: "Germany", industry: "数控刀具·铣刀", productLine: "硬质合金铣刀", scale: "51-200人", clientLevel: "金牌🥇", intention: "高意向🔥", source: "官网", email: "m.rossi@efashion.de", phone: "+49 170 123456", followDate: "2025-06-10", nextFollowDate: "2025-06-20", nextAction: "确认样品", followNote: "样品已寄" },
+                { id: "2", name: "李瑶", company: "Shenzhen Ease", country: "China", industry: "塑料切粒刀", productLine: "水下切粒刀", scale: "11-50人", clientLevel: "银牌🥈", intention: "中意向⭐", source: "B端平台", email: "liyao@ease.cn", phone: "+86 135 0000 1111", followDate: "2025-06-14", nextFollowDate: "2025-06-18", nextAction: "重新报价", followNote: "询价20尺柜" }
+            ];
+        }
+        
+        function updateSyncStatus(isOnline, msg) {
+            const el = document.getElementById("syncStatus");
+            if (isOnline) {
+                el.innerHTML = '<i class="fas fa-cloud-upload-alt cloud-icon"></i> ' + msg;
+                el.style.background = "#d9e6cf";
+            } else {
+                el.innerHTML = '<i class="fas fa-database"></i> ' + msg;
+                el.style.background = "#f0e2d4";
+            }
+        }
+        
+        function showToast(msg) {
+            const toast = document.getElementById("saveToast");
+            toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + msg;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 2000);
+        }
+        
+        function getToday() { return new Date().toISOString().slice(0,10); }
+        function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+        
+        function render() {
+            let filtered = clients;
+            if (searchKeyword) {
+                let kw = searchKeyword.toLowerCase();
+                filtered = clients.filter(c => c.name.toLowerCase().includes(kw) || (c.company && c.company.toLowerCase().includes(kw)) || (c.industry && c.industry.toLowerCase().includes(kw)));
+            }
+            let html = "";
+            const today = getToday();
+            filtered.forEach(c => {
+                let intentClass = c.intention.includes("高") ? "intent-high" : "intent-mid";
+                let levelClass = c.clientLevel.includes("金") ? "level-gold" : "";
+                html += `<tr>
+                    <td class="checkbox-col"><input type="checkbox" class="client-checkbox" value="${c.id}"></td>
+                    <td><strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.company) || '—'} | ${escapeHtml(c.country)}</small></td>
+                    <td>${escapeHtml(c.industry) || '—'}<br><small>${escapeHtml(c.productLine) || ''}</small></td>
+                    <td><span class="badge ${levelClass}">${escapeHtml(c.clientLevel)}</span> <span class="badge ${intentClass}">${escapeHtml(c.intention)}</span></td>
+                    <td><span class="badge source-badge">${escapeHtml(c.source) || '展会'}</span></td>
+                    <td>${c.followDate || '—'}<br><small>${(c.followNote || '').substring(0,20)}</small></td>
+                    <td>${c.nextFollowDate || '—'}${c.nextFollowDate === today ? ' 🔔' : (c.nextFollowDate < today ? ' ⚠️' : '')}</td>
+                    <td class="action-icons"><i class="fas fa-edit" onclick="editClient('${c.id}')"></i><i class="fas fa-clock" onclick="quickFollow('${c.id}')"></i><i class="fas fa-trash-alt" onclick="deleteClient('${c.id}')"></i></td>
+                </tr>`;
             });
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            return data.choices?.[0]?.message?.content || "我在这里陪着你。";
-        } catch(e) {
-            return "✨ 收到你的日记了。你愿意记录这些情绪，本身就是一种勇敢。";
+            document.getElementById("tableBody").innerHTML = html || '<tr><td colspan="8" style="text-align:center;">暂无客户</td></tr>';
+            document.getElementById("totalClients").innerText = clients.length;
+            document.getElementById("hotLeads").innerText = clients.filter(c => c.intention.includes("高")).length;
+            document.getElementById("dueTodayCount").innerText = clients.filter(c => c.nextFollowDate === today).length;
         }
-    }
-    
-    // ========== 日记功能 ==========
-    function initTagGroup(containerId, presets, selectedSet) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = "";
-        presets.forEach(p => {
-            const tag = document.createElement("span");
-            tag.className = "tag";
-            tag.textContent = p;
-            tag.onclick = () => {
-                if (selectedSet.has(p)) { selectedSet.delete(p); tag.classList.remove("selected"); }
-                else { selectedSet.add(p); tag.classList.add("selected"); }
+        
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m); }
+        
+        function resetForm() {
+            document.getElementById("clientName").value = "";
+            document.getElementById("company").value = "";
+            document.getElementById("country").value = "China";
+            document.getElementById("industry").value = "";
+            document.getElementById("productLine").value = "";
+            document.getElementById("scale").value = "11-50人";
+            document.getElementById("clientLevel").value = "基础⚪";
+            document.getElementById("intention").value = "中意向⭐";
+            document.getElementById("source").value = "展会";
+            document.getElementById("email").value = "";
+            document.getElementById("phone").value = "";
+            document.getElementById("followDate").value = getToday();
+            document.getElementById("nextFollowDate").value = "";
+            document.getElementById("nextAction").value = "";
+            document.getElementById("followNote").value = "";
+            editId = null;
+            document.getElementById("editId").value = "";
+            document.getElementById("formTitleText").innerText = "新增外贸客户";
+            document.getElementById("formPanel").style.display = "none";
+        }
+        
+        async function saveClient() {
+            let name = document.getElementById("clientName").value.trim();
+            if (!name) { alert("姓名不能为空"); return; }
+            let client = {
+                id: editId || genId(),
+                name: name,
+                company: document.getElementById("company").value.trim(),
+                country: document.getElementById("country").value.trim(),
+                industry: document.getElementById("industry").value.trim(),
+                productLine: document.getElementById("productLine").value.trim(),
+                scale: document.getElementById("scale").value,
+                clientLevel: document.getElementById("clientLevel").value,
+                intention: document.getElementById("intention").value,
+                source: document.getElementById("source").value,
+                email: document.getElementById("email").value.trim(),
+                phone: document.getElementById("phone").value.trim(),
+                followDate: document.getElementById("followDate").value,
+                nextFollowDate: document.getElementById("nextFollowDate").value,
+                nextAction: document.getElementById("nextAction").value.trim(),
+                followNote: document.getElementById("followNote").value.trim()
             };
-            container.appendChild(tag);
-        });
-    }
-    
-    function getSelectedText(set, customId) {
-        const custom = document.getElementById(customId).value.trim();
-        const items = Array.from(set);
-        if (custom) items.push(custom);
-        return items.length ? items.join("、") : "未记录";
-    }
-    
-    function getCurrentDiary() {
-        return {
-            id: Date.now() + "_" + Math.random().toString(36).substr(2, 6),
-            date: document.getElementById("diaryDate").value || new Date().toISOString().slice(0,10),
-            title: document.getElementById("diaryTitle").value.trim() || "无题",
-            event: document.getElementById("eventInput").value.trim() || "未记录",
-            body: getSelectedText(selectedBody, "customBody"),
-            emotion: getSelectedText(selectedEmotion, "customEmotion"),
-            feelingAboutFeeling: document.getElementById("feelingAboutFeeling").value.trim(),
-            thought: document.getElementById("thoughtInput").value.trim() || "未记录",
-            expectSelf: document.getElementById("expectSelf").value.trim(),
-            expectOther: document.getElementById("expectOther").value.trim(),
-            desire: getSelectedText(selectedDesire, "customDesire"),
-            selfWorth: document.getElementById("selfWorthInput").value.trim() || "正在探索中",
-            timestamp: Date.now()
+            if (editId) {
+                let idx = clients.findIndex(c => c.id === editId);
+                if (idx !== -1) clients[idx] = client;
+            } else {
+                clients.push(client);
+            }
+            saveLocal();
+            await saveToCloud();
+            render();
+            resetForm();
+            showToast("已保存并同步云端");
+        }
+        
+        window.editClient = function(id) {
+            let c = clients.find(c => c.id === id);
+            if (!c) return;
+            document.getElementById("clientName").value = c.name;
+            document.getElementById("company").value = c.company || "";
+            document.getElementById("country").value = c.country || "China";
+            document.getElementById("industry").value = c.industry || "";
+            document.getElementById("productLine").value = c.productLine || "";
+            document.getElementById("scale").value = c.scale || "11-50人";
+            document.getElementById("clientLevel").value = c.clientLevel;
+            document.getElementById("intention").value = c.intention;
+            document.getElementById("source").value = c.source || "展会";
+            document.getElementById("email").value = c.email || "";
+            document.getElementById("phone").value = c.phone || "";
+            document.getElementById("followDate").value = c.followDate || getToday();
+            document.getElementById("nextFollowDate").value = c.nextFollowDate || "";
+            document.getElementById("nextAction").value = c.nextAction || "";
+            document.getElementById("followNote").value = c.followNote || "";
+            editId = c.id;
+            document.getElementById("editId").value = c.id;
+            document.getElementById("formTitleText").innerText = "编辑客户";
+            document.getElementById("formPanel").style.display = "block";
         };
-    }
-    
-    function resetForm() {
-        document.getElementById("diaryTitle").value = "";
-        document.getElementById("eventInput").value = "";
-        document.getElementById("feelingAboutFeeling").value = "";
-        document.getElementById("thoughtInput").value = "";
-        document.getElementById("expectSelf").value = "";
-        document.getElementById("expectOther").value = "";
-        document.getElementById("selfWorthInput").value = "";
-        document.getElementById("customBody").value = "";
-        document.getElementById("customEmotion").value = "";
-        document.getElementById("customDesire").value = "";
-        selectedBody.clear(); selectedEmotion.clear(); selectedDesire.clear();
-        document.querySelectorAll(".tag").forEach(t => t.classList.remove("selected"));
-        document.getElementById("diaryDate").value = new Date().toISOString().slice(0,10);
-    }
-    
-    function renderHistory() {
-        const container = document.getElementById("historyList");
-        if (!diaryStore.length) { container.innerHTML = '<div style="text-align:center; padding:1rem;">✨ 暂无日记</div>'; return; }
-        container.innerHTML = "";
-        [...diaryStore].reverse().forEach(d => {
-            const div = document.createElement("div");
-            div.className = "history-item";
-            div.innerHTML = `<div class="history-content"><div class="history-date">${d.date}</div><div class="history-title">${d.title.substring(0,35)}</div></div><button class="delete-btn" data-id="${d.id}">🗑️</button>`;
-            div.querySelector(".history-content").onclick = () => {
-                loadDiaryToForm(d);
-                const ctx = { title: d.title, event: d.event, body: d.body, emotion: d.emotion, feelingAboutFeeling: d.feelingAboutFeeling, thought: d.thought, expectSelf: d.expectSelf, expectOther: d.expectOther, desire: d.desire, selfWorth: d.selfWorth };
-                callAI(SATIR_APPID, SATIR_APPKEY, "请给我温暖的陪伴和回应。", ctx).then(res => {
-                    document.getElementById("therapyOutput").innerHTML = `<div style="white-space:pre-wrap;">${res.replace(/\n/g,'<br>')}</div>`;
-                    document.getElementById("followupArea").style.display = "block";
-                });
-                lastDiary = d;
+        
+        window.deleteClient = async function(id) {
+            if (confirm("确定删除？")) {
+                clients = clients.filter(c => c.id !== id);
+                saveLocal();
+                await saveToCloud();
+                render();
+                showToast("已删除");
+            }
+        };
+        
+        window.quickFollow = async function(id) {
+            let c = clients.find(c => c.id === id);
+            if (!c) return;
+            let newDate = prompt("下次跟进日期:", c.nextFollowDate || getToday());
+            if (newDate === null) return;
+            let newAction = prompt("下一步动作:", c.nextAction || "");
+            if (newAction === null) return;
+            c.nextFollowDate = newDate;
+            c.nextAction = newAction;
+            saveLocal();
+            await saveToCloud();
+            render();
+            showToast("已更新");
+        };
+        
+        function exportExcel() {
+            if (!clients.length) { alert("无数据"); return; }
+            let headers = ["姓名","公司","国家","行业","产品线","规模","等级","意向","来源","邮箱","电话","最近跟进","下次跟进","下一步动作","跟进记录"];
+            let data = clients.map(c => [c.name, c.company, c.country, c.industry, c.productLine, c.scale, c.clientLevel, c.intention, c.source, c.email, c.phone, c.followDate, c.nextFollowDate, c.nextAction, c.followNote]);
+            let ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "客户");
+            XLSX.writeFile(wb, `客户_${getToday()}.xlsx`);
+        }
+        
+        function importExcel(file) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+                let ws = wb.Sheets[wb.SheetNames[0]];
+                let rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                if (rows.length < 2) { alert("无数据"); return; }
+                let imported = [];
+                for (let i = 1; i < rows.length; i++) {
+                    let r = rows[i];
+                    if (r[0]) {
+                        imported.push({
+                            id: genId(),
+                            name: String(r[0]).trim(),
+                            company: r[1] ? String(r[1]).trim() : "",
+                            country: r[2] ? String(r[2]).trim() : "",
+                            industry: r[3] ? String(r[3]).trim() : "",
+                            productLine: r[4] ? String(r[4]).trim() : "",
+                            scale: r[5] ? String(r[5]).trim() : "11-50人",
+                            clientLevel: r[6] ? String(r[6]).trim() : "基础⚪",
+                            intention: r[7] ? String(r[7]).trim() : "中意向⭐",
+                            source: r[8] ? String(r[8]).trim() : "展会",
+                            email: r[9] ? String(r[9]).trim() : "",
+                            phone: r[10] ? String(r[10]).trim() : "",
+                            followDate: r[11] ? String(r[11]).trim() : "",
+                            nextFollowDate: r[12] ? String(r[12]).trim() : "",
+                            nextAction: r[13] ? String(r[13]).trim() : "",
+                            followNote: r[14] ? String(r[14]).trim() : ""
+                        });
+                    }
+                }
+                if (confirm(`导入 ${imported.length} 条，确定替换？取消则追加`)) clients = imported;
+                else clients = [...clients, ...imported];
+                saveLocal();
+                saveToCloud();
+                render();
+                showToast("导入成功");
             };
-            div.querySelector(".delete-btn").onclick = (e) => {
-                e.stopPropagation();
-                if(confirm("删除这篇日记？")) { diaryStore = diaryStore.filter(dd => dd.id !== d.id); saveLocal(); renderHistory(); saveToCloud(); }
-            };
-            container.appendChild(div);
-        });
-    }
-    
-    function loadDiaryToForm(d) {
-        document.getElementById("diaryDate").value = d.date;
-        document.getElementById("diaryTitle").value = d.title;
-        document.getElementById("eventInput").value = d.event;
-        document.getElementById("feelingAboutFeeling").value = d.feelingAboutFeeling || "";
-        document.getElementById("thoughtInput").value = d.thought;
-        document.getElementById("expectSelf").value = d.expectSelf || "";
-        document.getElementById("expectOther").value = d.expectOther || "";
-        document.getElementById("selfWorthInput").value = d.selfWorth;
-        lastDiary = d;
-        document.getElementById("followupArea").style.display = "block";
-    }
-    
-    async function saveDiary() {
-        const diary = getCurrentDiary();
-        diaryStore = [diary, ...diaryStore.filter(d => d.id !== diary.id)];
-        saveLocal();
-        renderHistory();
-        await saveToCloud();
-        document.getElementById("therapyOutput").innerHTML = "<div>🤍 正在聆听...</div>";
-        const ctx = { title: diary.title, event: diary.event, body: diary.body, emotion: diary.emotion, feelingAboutFeeling: diary.feelingAboutFeeling, thought: diary.thought, expectSelf: diary.expectSelf, expectOther: diary.expectOther, desire: diary.desire, selfWorth: diary.selfWorth };
-        const res = await callAI(SATIR_APPID, SATIR_APPKEY, "请给我温暖的陪伴和回应。", ctx);
-        document.getElementById("therapyOutput").innerHTML = `<div style="white-space:pre-wrap;">${res.replace(/\n/g,'<br>')}</div>`;
-        document.getElementById("followupArea").style.display = "block";
-        lastDiary = diary;
-        resetForm();
-    }
-    
-    async function askSatir() {
-        const q = document.getElementById("followupQuestion").value.trim();
-        if(!q || !lastDiary) return;
-        const respDiv = document.getElementById("followupResponse");
-        respDiv.style.display = "block";
-        respDiv.innerHTML = "🤍 思考中...";
-        const ctx = { title: lastDiary.title, event: lastDiary.event, body: lastDiary.body, emotion: lastDiary.emotion, feelingAboutFeeling: lastDiary.feelingAboutFeeling, thought: lastDiary.thought, expectSelf: lastDiary.expectSelf, expectOther: lastDiary.expectOther, desire: lastDiary.desire, selfWorth: lastDiary.selfWorth };
-        const res = await callAI(SATIR_APPID, SATIR_APPKEY, q, ctx);
-        respDiv.innerHTML = `<div style="white-space:pre-wrap;">🧘 **萨提亚陪伴**\n\n${res.replace(/\n/g,'<br>')}</div>`;
-    }
-    
-    async function askMiracle() {
-        const q = document.getElementById("followupQuestion").value.trim();
-        if(!q || !lastDiary) return;
-        const respDiv = document.getElementById("followupResponse");
-        respDiv.style.display = "block";
-        respDiv.innerHTML = "✨ 思考中...";
-        const ctx = { title: lastDiary.title, event: lastDiary.event, body: lastDiary.body, emotion: lastDiary.emotion, feelingAboutFeeling: lastDiary.feelingAboutFeeling, thought: lastDiary.thought, expectSelf: lastDiary.expectSelf, expectOther: lastDiary.expectOther, desire: lastDiary.desire, selfWorth: lastDiary.selfWorth };
-        const res = await callAI(MIRACLE_APPID, MIRACLE_APPKEY, q, ctx);
-        respDiv.innerHTML = `<div style="white-space:pre-wrap;">✨ **奇迹30赋能**\n\n${res.replace(/\n/g,'<br>')}</div>`;
-    }
-    
-    async function askZhao() {
-        const q = document.getElementById("followupQuestion").value.trim();
-        if(!q || !lastDiary) return;
-        const respDiv = document.getElementById("followupResponse");
-        respDiv.style.display = "block";
-        respDiv.innerHTML = "👩‍🏫 思考中...";
-        const ctx = { title: lastDiary.title, event: lastDiary.event, body: lastDiary.body, emotion: lastDiary.emotion, feelingAboutFeeling: lastDiary.feelingAboutFeeling, thought: lastDiary.thought, expectSelf: lastDiary.expectSelf, expectOther: lastDiary.expectOther, desire: lastDiary.desire, selfWorth: lastDiary.selfWorth };
-        const res = await callAI(ZHAO_APPID, ZHAO_APPKEY, q, ctx);
-        respDiv.innerHTML = `<div style="white-space:pre-wrap;">👩‍🏫 **赵炎育儿**\n\n${res.replace(/\n/g,'<br>')}</div>`;
-    }
-    
-    function clearAll() { if(confirm("清空所有日记？")) { diaryStore = []; saveLocal(); renderHistory(); saveToCloud(); } }
-    
-    function initDiary() {
-        loadFromCloud();
-        document.getElementById("saveDiaryBtn").onclick = saveDiary;
-        document.getElementById("resetFormBtn").onclick = resetForm;
-        document.getElementById("clearAllHistoryBtn").onclick = clearAll;
-        document.getElementById("askSatirBtn").onclick = askSatir;
-        document.getElementById("askMiracleBtn").onclick = askMiracle;
-        document.getElementById("askZhaoBtn").onclick = askZhao;
-        document.getElementById("submitFollowup").onclick = askSatir;
-        resetForm();
-    }
-    
-    document.getElementById("unlockBtn").onclick = unlock;
-    document.getElementById("passwordInput").addEventListener("keypress", e => { if(e.key === "Enter") unlock(); });
-    document.getElementById("changePwdBtn").onclick = changePwd;
-    
-    initTagGroup("bodyTagsContainer", bodyPresets, selectedBody);
-    initTagGroup("emotionTagsContainer", emotionPresets, selectedEmotion);
-    initTagGroup("desireTagsContainer", desirePresets, selectedDesire);
-    resetForm();
-</script>
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function initCRM() {
+            loadFromCloud();
+            document.getElementById("searchBtn").onclick = () => { searchKeyword = document.getElementById("searchInput").value; render(); };
+            document.getElementById("clearSearchBtn").onclick = () => { document.getElementById("searchInput").value = ""; searchKeyword = ""; render(); };
+            document.getElementById("showAddFormBtn").onclick = () => { resetForm(); document.getElementById("formPanel").style.display = "block"; };
+            document.getElementById("cancelFormBtn").onclick = resetForm;
+            document.getElementById("saveClientBtn").onclick = saveClient;
+            document.getElementById("exportAllBtn").onclick = exportExcel;
+            document.getElementById("importBtn").onclick = () => document.getElementById("importFile").click();
+            document.getElementById("importFile").onchange = (e) => { if(e.target.files[0]) importExcel(e.target.files[0]); e.target.value = ""; };
+            document.getElementById("selectAllCheckbox").onclick = (e) => document.querySelectorAll(".client-checkbox").forEach(cb => cb.checked = e.target.checked);
+        }
+        
+        document.getElementById("unlockBtn").onclick = unlock;
+        document.getElementById("passwordInput").addEventListener("keypress", e => { if(e.key === "Enter") unlock(); });
+        document.getElementById("changePwdBtn").onclick = changePwd;
+    </script>
 </body>
 </html>
